@@ -4,30 +4,30 @@ With the help of Ben Booth's Xen::API (Perl module I hacked up), I put together 
 
 Hint: You're best off compiling a static binary (check build.txt).  It would be nearly impossible to meet the dependencies on a live XenServer otherwise.
 
-## Options:
+### Options:
 
--sh : source host
--su : source user (usually root)
--sp : source pass
--sv : source VM label or UUID
--dh : destination host
--du : destination user
--dp : destination pass
--ds : destination SR (optional)
+	-sh : source host
+	-su : source user (usually root)
+	-sp : source pass
+	-sv : source VM label or UUID
+	-dh : destination host
+	-du : destination user
+	-dp : destination pass
+	-ds : destination SR (optional)
 
 If any of the options are omitted, you will be prompted for them.
 
-Example output:
+###Example output:
 
-[root@cl-ash-h1 ~]# ./migratevm.pl
-Enter source host name/IP (blank = localhost): 1.2.3.4
-Enter username for 1.2.3.4 (blank = root):
-Enter password for 1.2.3.4: ************
-Enter source vm name or uuid on 1.2.3.4: my_vm
-Enter destination host name/IP (blank = localhost):
-Enter username for localhost (blank = root):
-Enter password for localhost: ******
-Destination SR on localhost (blank for default):
-Starting transfer
-...................    12.0%, 30618.43 (KB/sec)
-Done.
+	[root@cl-ash-h1 ~]# ./migratevm.pl
+	Enter source host name/IP (blank = localhost): 1.2.3.4
+	Enter username for 1.2.3.4 (blank = root):
+	Enter password for 1.2.3.4: ************
+	Enter source vm name or uuid on 1.2.3.4: my_vm
+	Enter destination host name/IP (blank = localhost):
+	Enter username for localhost (blank = root):
+	Enter password for localhost: ******
+	Destination SR on localhost (blank for default):
+	Starting transfer
+	...................    12.0%, 30618.43 (KB/sec)
+	Done.
