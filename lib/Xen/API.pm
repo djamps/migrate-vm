@@ -1,47 +1,11 @@
-=head1 NAME
-
-Xen::API Perl interface to the Xen RPC-XML API.
-
-=head1 SYNOPSIS
-
-  use Xen::API;
-  my $x = Xen::API->new;
-
-  my %vms = $x->list_vms
-  my %templates = $x->list_templates
-
-  my $vm = $x->create_vm(template=>'my_template',cpu=>4,memory=>'16G',vmname=>'this_vm');
-
-  my $vm_records = $x->Xen::API::VM::get_all_records();
-
-=head1 DESCRIPTION
-
-Perl interface to the Xen RPC-XML API. Contains some shortcuts for creating,
-destroying, importing, and exporting VMs. All RPC API commands are available in
-the Xen::API:: package space. Simply replace the dots with :: and prepend
-Xen::API:: to the command, and execute it as if it were a perl function. Be
-sure to pass the Xen object as the first parameter.
-
-=head1 METHODS
-
-=cut
-
 package Xen::API;
-#use AutoLoader 'AUTOLOAD';   # import the default AUTOLOAD subroutine
 use strict;
 use RPC::XML;
 use RPC::XML::Client;
 $RPC::XML::FORCE_STRING_ENCODING = 1;
 use IO::Prompt;
-#use Net::OpenSSH;
-#use URI qw(scheme host);
-
 use HTTP::Request;
-#use Net::HTTP;
 use Number::Format qw( unformat_number );
-#use FileHandle;
-#use Data::Dumper;
-#use IO::Socket;
 use Time::HiRes qw( tv_interval gettimeofday );
 
 require Exporter;
@@ -57,12 +21,6 @@ BEGIN {
   our $VERSION = '0.01';
 }
 
-=head2 prompt
-
-Display a password prompt.
-
-=cut
-
 sub password {
   my $message = shift || 'Enter password: ';
   IO::Prompt::prompt($message, -e=>'*', '-tty').'';
@@ -72,21 +30,6 @@ sub input {
   my $message = shift || 'Enter a value: ';
   IO::Prompt::prompt($message, ).'';
 }
-
-=head2 mem
-
-Convert suffix notation (k, M, G) to byte count. Useful for writing memory to give
-to VM.
-
-=cut
-
-# sub mem { unformat_number(@_) }
-
-=head2 bool true false string Int i4 i8 double datetime nil base64 array struct fault
-
-shortcuts for RPC::XML explicit typecasts
-
-=cut
 
 sub bool { RPC::XML::boolean->new(@_) }
 sub true { RPC::XML::boolean->new(1) }
@@ -102,20 +45,7 @@ sub base64 { RPC::XML::base64->new(@_) }
 sub array { RPC::XML::array->new(@_) }
 sub struct { RPC::XML::struct->new(@_) }
 sub fault { RPC::XML::fault->new(@_) }
-
-=head2 xen
-
-Create a new instance of a Xen class.
-
-=cut
-
 sub xen {Xen::API->new(@_)}
-
-=head2 new($uri, $user, $password)
-
-New Xen instance.
-
-=cut
 
 sub new {
 	no strict;
@@ -167,129 +97,6 @@ EOS
     $self->{xen}->simple_request('session.login_with_password',$user,$password));
   return $self;
 }
-
-=head2 create_vm
-
-Create a new VM.
-
-Arguments:
-
-    - vmname - The xen name of the VM.
-    - template - The template to base the VM from.
-    - cpu - How many CPUs to assign
-    - memory - How much memory to assign
-    - hostname - The hostname to set. Works for Debian/Ubuntu and RedHat/CentOS only.
-    - sudo - Should sudo be used to edit the hostname config file?
-    - user - SSH user name for editing the hostname config file
-    - password - SSH password for editing the hostname config file
-    - port - SSH port for editing the hostname config file
-
-Returns a ref to the newly created VM.
-
-=cut
-
-#BEGIN {
-#   my $lastpassword;
-#   sub create_vm {
-#     my $self = shift or return;
-#
-#     # read arguments
-#     my %args = @_;
-#     my $sudo=exists $args{sudo}?$args{sudo}:1;
-#     my $user = $args{user};
-#     $sudo=1 if !defined($sudo) && $user ne 'root';
-#     my $password = exists $args{password}?$args{password}:$lastpassword;
-#     my $vmname = defined $args{vmname}?$args{vmname}:$args{hostname};
-#     my $hostname = $args{hostname};
-#     my $port = $args{port};
-#     my $cpu=$args{cpu};
-#     my $memory=$args{memory};
-#     my $template = $args{template} or return;
-#     return if !defined $vmname || !defined $hostname;
-#
-#     # prompt for password
-#     if (!defined($password)) {
-#       $password = prompt("Enter login password: ");
-#     }
-#     $lastpassword = $password;
-#
-#     # get the list of VMs and templates in this pool
-#     my %vms = %{$self->Xen::API::VM::get_all_records||{}};
-#     my @templates = grep {$vms{$_}{is_a_template} && @{$vms{$_}{VBDs}||[]}} keys %vms;
-#
-#     # query for the template by name or uuid
-#     my @use_template = grep {
-#       $vms{$_}{name_label} eq $template
-#         || $vms{$_}{uuid} eq $template
-#         || $_ eq $template} @templates;
-#     die "No template named \"$template\"!\n" if !@use_template;
-#     die "Multiple templates found matching \"$template\":\n"
-#       .join(', ',map {"\"$vms{$_}{name_label}\" ($vms{$_}{uuid})"} @use_template)
-#       if @use_template>1;
-#     my $use_template = $use_template[0];
-#
-#     # clone the template into a new VM
-#     my $new_vm = $self->Xen::API::VM::clone($use_template,$vmname);
-#
-#     # set number of VCPUs
-#     if (defined($cpu)) {
-#       $self->Xen::API::VM::set_VCPUs_max($new_vm,$cpu);
-#       $self->Xen::API::VM::set_VCPUs_at_startup($new_vm,$cpu);
-#     }
-#
-#     # set memory
-#     if (defined($memory)) {
-#       my $mem = unformat_number($memory);
-#       $self->Xen::API::VM::set_memory_limits($new_vm,$mem,$mem,$mem,$mem);
-#       #$self->Xen::API::VM::set_memory_dynamic_min($new_vm,$mem);
-#       #$self->Xen::API::VM::set_memory_dynamic_max($new_vm,$mem);
-#       #$self->Xen::API::VM::set_memory_static_min($new_vm,$mem);
-#       #$self->Xen::API::VM::set_memory_static_max($new_vm,$mem);
-#     }
-#
-#     # provision the VM
-#     $self->Xen::API::VM::provision($new_vm);
-#
-#     # start the VM
-#     $self->Xen::API::VM::start($new_vm,false,true);
-#
-#     # set the hostname using SSH. This step is distro-specific, so try everything
-#     # and see what sticks.
-#     if (defined $hostname) {
-#       # get the IP
-#       my $ip = $self->get_ip($new_vm);
-#
-#       my $ssh = Net::OpenSSH->new($ip,
-#         defined($user)?(user=>$user):(),
-#         defined($password)?(password=>$password):(),
-#         defined($port)?(port=>$port):(),
-#         master_opts=>[-o=>'StrictHostKeyChecking=no'],
-#       );
-#       die "Couldn't establish SSH connection: ".$ssh->error if $ssh->error;
-#       if ($sudo) {
-#         $ssh->system({stdin_data=>"$password\n", quote_args=>1, stderr_discard=>1},
-#           'sudo','-Sk','-p','--','sed','-ri','1,1s#^.*$#'.$hostname.'#','/etc/hostname');
-#         $ssh->system({stdin_data=>"$password\n", quote_args=>1, stderr_discard=>1},
-#           'sudo','-Sk','-p','--','sed','-ri','s#^HOSTNAME=.*#HOSTNAME='.$hostname.'#','/etc/sysconfig/network');
-#       }
-#       else {
-#         $ssh->system({quote_args=>1, stderr_discard=>1},
-#           'sed','-ri','1,1s#^.*$#'.$hostname.'#','/etc/hostname');
-#         $ssh->system({quote_args=>1, stderr_discard=>1},
-#           'sed','-ri','s#^HOSTNAME=.*#HOSTNAME='.$hostname.'#','/etc/sysconfig/network');
-#       }
-#       # reboot
-#       $self->Xen::API::VM::clean_reboot($new_vm);
-#     }
-#     return $new_vm;
-#   }
-#}
-
-=head2 get_ip
-
-Gets the IP address of a VM.
-
-=cut
 
 sub get_ref {
   my $self = shift or return;
@@ -401,11 +208,7 @@ sub get_vm_rrd {
 	}
 	return $res->decoded_content;
 }
-#
-# sub get_metrics {
-#
-#
-# }
+
 
 sub set_locking {
 	my $self = shift;
@@ -451,161 +254,10 @@ sub set_locking {
 	return scalar (keys %{$vmdata});
 }
 
-
-# sub get_ip {
-#   my $self = shift or return;
-#   my $vmname = shift or return;
-#   my $maxwait = shift;
-#   $maxwait = 60 if !defined($maxwait);
-#
-#   my %vms = %{$self->Xen::API::VM::get_all_records||{}};
-#   my @vms = grep {
-#     $vms{$_}{name_label} eq $vmname
-#       || $vms{$_}{uuid} eq $vmname
-#       || $_ eq $vmname} keys %vms;
-#   my $vm = $vms[0] or die "Could not find vm $vmname";
-#   my $ip = $self->_get_ip($vm, $maxwait)
-#     or die "Could not get IP address of VM $vmname: timeout";
-#   return $ip;
-# }
-
-# sub _get_ip {
-#   my $self = shift or return;
-#   my $vm = shift or return;
-#   my $maxwait = shift;
-#   $maxwait=60 if !defined $maxwait;
-#
-#   # get the IP address of the VM
-#   my $wait=0;
-#   my $ip;
-#   while (!$ip && $wait < $maxwait) {
-#     eval {
-#       my $vgm = $self->Xen::API::VM::get_guest_metrics($vm);
-#       my $net = $self->Xen::API::VM_guest_metrics::get_networks($vgm);
-#       $ip = $net->{'0/ip'} if $net;
-#     };
-#     $wait++;
-#     sleep 1 if !$ip && $wait < $maxwait;
-#   }
-#   return $ip;
-# }
-
-=head2 destroy_vm
-
-Destroys a VM and its associated VDIs.
-
-=cut
-
-# sub destroy_vm {
-#   my $self = shift or return;
-#   my $vmname = shift or return;
-#
-#   # find the VM
-#   my %vms = %{$self->Xen::API::VM::get_all_records||{}};
-#   my @vms = grep {
-#     $vms{$_}{name_label} eq $vmname
-#       || $vms{$_}{uuid} eq $vmname
-#       || $_ eq $vmname} keys %vms;
-#   die "Multiple VMs matched $vmname" if @vms > 1;
-#   my $vm = $vms[0] or die "Could not find vm $vmname";
-#
-#   # make sure the VM is shut down
-#   if (($vms{$vm}{power_state}||'') ne 'Halted') {
-#     $self->Xen::API::VM::hard_shutdown($vm);
-#   }
-#
-#   # destroy the attached VDIs
-#   for my $vbd (@{$vms{$vm}{VBDs}||[]}) {
-#     my $vbd_record = $self->Xen::API::VBD::get_record($vbd);
-#     $self->Xen::API::VDI::destroy($vbd_record->{VDI})
-#       if $vbd_record->{VDI} && $vbd_record->{VDI} ne 'OpaqueRef:NULL';
-#   }
-#
-#   #destroy the VM
-#   $self->Xen::API::VM::destroy($vm);
-#   return '';
-# }
-
-=head2 import_vm
-
-Import a VM from a xva file.
-
-=cut
-
 sub session {
 	my $self = shift;
 	return $self->{session};
 }
-
-# sub import_vm {
-#   my $self = shift or return;
-#   my $filename = shift or return;
-#   my $sr_id = shift;
-#
-#   # find the storage repository if specified
-#   my $sr_uuid;
-#   if ($sr_id) {
-#     my %sr = %{$self->Xen::API::SR::get_all_records||{}};
-#     my @srs = grep {
-#       $sr{$_}{name_label} eq $sr_id
-#         || $sr{$_}{uuid} eq $sr_id
-#         || $_ eq $sr_id} keys %sr;
-#     my $sr = $srs[0]
-#       or die "Could not find storage repository $sr_id";
-#     $sr_uuid = $sr{$sr}{uuid};
-#   }
-#
-#   # create the source and destination tasks
-#   my $task = $self->Xen::API::task::create("import_$filename","Import VM $filename");
-#
-#   # URI
-#   my $uri = URI->new($self->{uri});
-#   $uri->path('import');
-#   $uri->query_param(session_id=>$self->{session});
-#   $uri->query_param(task_id=>$task);
-#   $uri->query_param(sr_uuid=>$sr_uuid) if $sr_uuid;
-#
-#   my $net = Net::HTTP->new(Host=>$uri->host_port)
-#     or die "Could not connect to host at ".$uri->host_port.": $@";
-#   $net->write_request(
-#     PUT=>$uri->path_query,
-#     'Content-Length'=>(-s $filename));
-#
-#   my $fh = FileHandle->new($filename, 'r')
-#     or die "Could not open $filename for reading: $!";
-#   $fh->binmode;
-#   my $chunk_size = 4096;
-#   while ($fh->read(my $data, $chunk_size)) {
-#     $net->print($data);
-#   }
-#   $fh->close;
-#   # check HTTP status code
-#   my ($code, $message, %headers) = $net->read_response_headers;
-#   $net->close;
-#   die "import returned HTTP Status code: $code" if $code != 200;
-#
-#   # Wait for the task status to be updated
-#   my $wait=0;
-#   my $maxwait=60;
-#   my $task_record = $self->Xen::API::task::get_record($task);
-#   while ($task_record && ($task_record->{status}||'') eq 'pending'
-#            && $wait < $maxwait)
-#   {
-#     $task_record = $self->Xen::API::task::get_record($task);
-#     sleep 1;
-#     $wait++;
-#   }
-#   $self->Xen::API::task::destroy($task) if $task_record->{status} eq 'success' || $task_record->{status} eq 'failure';
-#   die "Import task returned status $task_record->{status}: ".join(', ',@{$task_record->{error_info}||[]})
-#       if $task_record->{status} ne 'success';
-#   return '';
-# }
-
-=head2 export_vm
-
-Export a VM to a xva file.
-
-=cut
 
 sub transfer_vm {
   my $self = shift or return;
@@ -758,129 +410,6 @@ sub transfer_vm {
 
 }
 
-# sub export_vm {
-#   my $self = shift or return;
-#   my $vmname = shift or return;
-#   my $filename = shift;
-#
-#   # find the VM
-#   my %vms = %{$self->Xen::API::VM::get_all_records||{}};
-#   my @vms = grep {
-#     $vms{$_}{name_label} eq $vmname
-#       || $vms{$_}{uuid} eq $vmname
-#       || $_ eq $vmname} keys %vms;
-#   my $vm = $vms[0] or die "Could not find vm $vmname";
-#
-#   my $task = $self->Xen::API::task::create("export_$vm","Export VM $vm");
-#
-#   # URI
-#   my $uri = URI->new($self->{uri});
-#   $uri->path('export');
-#   $uri->query_param(session_id=>$self->{session});
-#   $uri->query_param(task_id=>$task);
-#   $uri->query_param(ref=>$vm);
-#
-#   my $ua = LWP::UserAgent->new;
-#   my $req = HTTP::Request->new(GET=>$uri->as_string);
-#   my $res = $ua->request($req, $filename);
-#
-#   my $task_record = $self->Xen::API::task::get_record($task);
-#   $self->Xen::API::task::destroy($task) if $task_record->{status} eq 'success' || $task_record->{status} eq 'failure';
-#   die "Export task returned status $task_record->{status}: ".join(', ',@{$task_record->{error_info}||[]})
-#       if $task_record->{status} ne 'success';
-#   return '';
-# }
-
-
-=head2 set_template
-
-Set the is_a_template flag for a VM.
-
-=cut
-
-# sub set_template {
-#   my $self = shift or return;
-#   my $vmname = shift or return;
-#   my $set_template = shift;
-#   $set_template = 1 if !defined($set_template);
-#
-#   # find the VM
-#   my %vms = %{$self->Xen::API::VM::get_all_records||{}};
-#   my @vms = grep {
-#     $vms{$_}{name_label} eq $vmname
-#       || $vms{$_}{uuid} eq $vmname
-#       || $_ eq $vmname} keys %vms;
-#   my $vm = $vms[0] or die "Could not find vm $vmname";
-#
-#   $self->Xen::API::VM::set_is_a_template(
-#     $vm,
-#     $set_template?
-#       ref($set_template)? $set_template : true
-#     : false);
-#   return '';
-# }
-
-=head2 list_vms
-
-List the VMs on this Xen server.
-
-=cut
-
-# sub list_vms {
-#   my $self = shift or return;
-#   my %vms = %{$self->Xen::API::VM::get_all_records||{}};
-#   my @vms = grep {!$vms{$_}{is_a_template}} keys %vms;
-#   return map {{
-#       name_label=>$vms{$_}{name_label},
-#       uuid=>$vms{$_}{uuid},
-#       ref=>$_,
-#       power_state=>$vms{$_}{power_state},
-#       ip=>($vms{$_}{power_state}||'') eq 'Running' ? $self->_get_ip($_,1) : undef,
-#     }}
-#     sort {$vms{$a}{name_label} cmp $vms{$b}{name_label}} @vms;
-# }
-
-=head2 list_templates
-
-List the templates on this Xen server.
-
-=cut
-#
-# sub list_templates {
-#   my $self = shift or return;
-#   my %vms = %{$self->Xen::API::VM::get_all_records||{}};
-#   my @templates = grep {$vms{$_}{is_a_template} && @{$vms{$_}{VBDs}||[]}} keys %vms;
-#   return map {{
-#     name_label=>$vms{$_}{name_label},
-#     uuid=>$vms{$_}{uuid},
-#     ref=>$_,
-#   }}
-#     sort {$vms{$a}{name_label} cmp $vms{$b}{name_label}} @templates;
-# }
-
-=head2 list_hosts
-
-List the physical hosts and related information.
-
-=cut
-
-# sub list_hosts {
-#   my $self = shift or return;
-#   my %hosts = %{$self->Xen::API::host::get_all_records||{}};
-#   my %cpus = %{$self->Xen::API::host_cpu::get_all_records||{}};
-#   my %metrics = map {$_=>$self->Xen::API::host_metrics::get_record($hosts{$_}{metrics})} keys %hosts;
-#
-#   return map {{
-#     name_label=>$hosts{$_}{name_label},
-#     uuid=>$hosts{$_}{uuid},
-#     ref=>$_,
-#     cpus=>scalar(@{$hosts{$_}{host_CPUs}||[]}),
-#     %{$metrics{$_}},
-#     memory_free=>format_bytes($metrics{$_}{memory_free}, mode=>'iec'),
-#     memory_total=>format_bytes($metrics{$_}{memory_total}, mode=>'iec'),
-#   }} sort {$hosts{$a}{name_label} cmp $hosts{$b}{name_labe}} keys %hosts;
-# }
-
 sub value {
   my $self = shift or return;
   my ($val) = @_;
@@ -913,19 +442,4 @@ sub error {
 }
 
 1;
-
-=head1 AUTHOR
-
-Ben Booth, benwbooth@gmail.com
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (C) 2012 by Ben Booth
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.10.1 or,
-at your option, any later version of Perl 5 you may have available.
-
-
-=cut
 
