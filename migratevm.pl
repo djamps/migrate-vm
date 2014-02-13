@@ -32,7 +32,7 @@ my $svm = $opt->{'svm'} || Xen::API::input("Enter source vm name or uuid on $sho
 my $dhost = $opt->{'dhost'} || Xen::API::input("Enter destination host name/IP (blank = localhost): ") || 'localhost';
 my $duser = $opt->{'duser'} || Xen::API::input("Enter username for ".$dhost." (blank = root): ") || 'root';
 my $dpass = $opt->{'dpass'} || Xen::API::password("Enter password for ".$dhost.": ");
-my $dsr = $opt->{'dsr'} || Xen::API::input("Destination SR on ".$dhost." (blank for default): ");
+my $dsr = exists($opt->{'dsr'})?$opt->{'dsr'}:Xen::API::input("Destination SR on ".$dhost." (blank for default): ");
 
 ## Create Xen::API object on source host
 print "Connecting to source host\n";
