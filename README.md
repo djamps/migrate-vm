@@ -1,5 +1,7 @@
 ## Migrate XenServer VM's Between Servers
 
+	NOTE:  If you need a binary of the script, please see my blog post: http://djlab.com/2013/01/migrate-a-xenserver-vm-without-a-pool-or-shared-storage/
+
 With the help of Ben Booth's Xen::API (Perl module I hacked up), I put together a VM migration script to export a VM directly to another host with no intermediary file. The transfer occurs over XAPI with no temp files or local disk interaction. This script can run directly on the source or destination host, or any server in between. Bear in mind, you will have the best speeds and least network overhead running this directly on the destination host.
 
 Hint: You're best off compiling a static binary (check build.txt).  It would be nearly impossible to meet the dependencies on a live XenServer otherwise.
