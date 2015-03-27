@@ -21,7 +21,7 @@ GetOptions ( $opt,
 	"debug!",
 );
 
-my $version = "1.0.1";
+my $version = "1.0.2";
 print "migratevm $version started\n";
 
 ## Set up vars
