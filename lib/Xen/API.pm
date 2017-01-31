@@ -1,5 +1,6 @@
 package Xen::API;
 use strict;
+use warnings;
 use RPC::XML;
 use RPC::XML::Client;
 $RPC::XML::FORCE_STRING_ENCODING = 1;
@@ -57,7 +58,7 @@ sub new {
   my $self = {};
   bless $self, $class;
   require URI;
-  $uri = "http://$uri" if !URI->new($uri)->scheme;
+  $uri = "https://$uri" if !URI->new($uri)->scheme;
   $self->{host} = URI->new($uri)->host;
   $self->{uri} = $uri;
   #require RPC::XML::Client;
@@ -270,11 +271,11 @@ sub transfer_vm {
   ## Create source task
 	my $stask = $self->Xen::API::task::create("export_$vmname","Export VM $vmname");
 	#require Time::HiRes;
-	require IO::Socket::INET;
+	require IO::Socket::SSL;
   # create source server socket
 	my ($ssock,$dsock);
 
-    if ( $ssock = IO::Socket::INET->new(PeerAddr => $self->{host}, PeerPort => 80, Proto => 'tcp', Blocking => 1, Timeout => 10)  )
+    if ( $ssock = IO::Socket::SSL->new(PeerAddr => $self->{host}, PeerPort => 443, Proto => 'tcp', Blocking => 1, Timeout => 10)  )
     {
       if ( $ssock->connected )
       {
@@ -326,7 +327,7 @@ sub transfer_vm {
   my $dtask = $d->Xen::API::task::create("import_$vmname","Import VM $vmname");
   
 	# Creating destination socket
-    if ( $dsock = IO::Socket::INET->new(PeerAddr => $d->{host}, PeerPort => 80, Proto => 'tcp', Blocking => 1, Timeout => 10)  )
+    if ( $dsock = IO::Socket::SSL->new(PeerAddr => $d->{host}, PeerPort => 443, Proto => 'tcp', Blocking => 1, Timeout => 10)  )
     {
       if ( $dsock->connected )
       {
