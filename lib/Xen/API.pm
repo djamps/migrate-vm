@@ -6,6 +6,7 @@ use IO::Prompt;
 use HTTP::Request;
 use Number::Format qw( unformat_number );
 use Time::HiRes qw( tv_interval gettimeofday );
+use IO::Socket::SSL qw( SSL_VERIFY_NONE );
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -63,10 +64,15 @@ sub new {
   #RPC::XML::Client->import('simple_request');
   #	$RPC::XML::FORCE_STRING_ENCODING = 1;
   $self->{xen} = RPC::XML::Client->new($self->{uri},
-      ssl_opts =>    {
-          SSL_verify_mode => SSL_VERIFY_NONE
-      });
+    useragent => [
+      ssl_opts => {
+        verify_hostname => 0,
+        SSL_verify_mode => SSL_VERIFY_NONE,
+      },
+    ],
+  );
   # set up autoload packages for Xen API.
+
   my %seen;
   my %classes =
     map {(
@@ -75,6 +81,7 @@ sub new {
     )}
     map {s/\.[^.]*$//; s/\./::/g; !$seen{$_}++?$_:()}
     @{$self->{xen}->simple_request('system.listMethods')||[]};
+
   for my $c (keys %classes) {
     my $package = $classes{$c};
     my $eval = <<EOS;
@@ -97,6 +104,7 @@ EOS
     if !defined($password);
   $self->{session} = $self->value(
     $self->{xen}->simple_request('session.login_with_password',$user,$password));
+
   return $self;
 }
 
@@ -104,13 +112,16 @@ sub get_ref {
   my $self = shift or return;
   my $type = shift or return;
   my $name = shift or return;
-  if ( length($name) == 36 ) {
-		return $self->request($type.'.get_by_uuid',$name);
-	} else {
-	  return if scalar @{$self->request($type.'.get_by_name_label',$name)} > 1; ## Don't return a ref if more than one matches
-	  return @{$self->request($type.'.get_by_name_label',$name)}[0];
-	}
+  my %results = %{$self->request($type.'.get_all_records') || { }};
+
+  my @results = grep {
+    $results{$_}{name_label} eq $name
+      || $results{$_}{uuid} eq $name
+      || $_ eq $name} keys %results;
+  my $found = $results[0] or die "Could not find $type $name";
+  return $found;
 }
+
 
 sub get_record {
   my $self = shift or return;
@@ -119,20 +130,6 @@ sub get_record {
   return $self->request($type.'.get_record',$ref);
 }
 
-sub get_all_records {
-  my $self = shift or return;
-  my $type = shift or return;
-  my $ref = shift or return;
-  return $self->request($type.'.get_all_records',$ref);
-}
-
-sub get_all_records_where {
-  my $self = shift or return;
-  my $type = shift or return;
-  my $ref = shift or return;
-  my $opt = shift;
-  return $self->request($type.'.get_all_records_where',$ref,$opt);
-}
 
 sub get_console_ref {
   my $self = shift or return;
@@ -153,7 +150,7 @@ sub get_rrd_updates {
 	my $vm = shift || do {$self->error("VM required"); return;};
 	my $start = shift || (time() - 300);  ## Default 5 minutes
 	if ( !ref($vm) ) {
-		my $vm_ref = $self->get_ref('VM',$vm) || return;
+		my $vm_ref = $self->get_ref('VM', $vm) || return;
 		$vm = $self->get_record('VM',$vm_ref) || return;
 	}
 	if ( !($vm->{power_state} =~ m/running/i) ) {
@@ -216,7 +213,7 @@ sub set_locking {
 	my $self = shift;
 	my $vm_name = shift || return;
 	my $params = shift;
-	my $vm_ref = $self->get_ref('VM',$vm_name);
+	my $vm_ref = $self->get_ref('VM', $vm_name);
 	die "Could not get VM ref for $vm_ref" if !$vm_ref;
 	## Get VM records
 	my $vm_records = $self->get_record('VM',$vm_ref);
@@ -267,7 +264,7 @@ sub transfer_vm {
   my ($dest_host,$dest_user,$dest_pass,$sr_id) = @_;
   
   # find the source VM
-  my $vm_ref = $self->get_ref('VM',$vmname) || die "Could not find VM '$vmname'";
+  my $vm_ref = $self->get_ref('VM', $vmname);
   
   ## Create source task
 	my $stask = $self->Xen::API::task::create("export_$vmname","Export VM $vmname");
@@ -320,7 +317,7 @@ sub transfer_vm {
   # find the destination storage repository if specified
   my $sr_uuid;
   if ($sr_id) {
-		my $sr_ref = $d->get_ref('SR',$sr_id) || die "Could not find SR '$sr_id'";
+		my $sr_ref = $d->get_ref('SR', $sr_id);
     $sr_uuid = $d->get_record('SR',$sr_ref)->{'uuid'} || die "Could not find SR '$sr_id'";
   }
 
