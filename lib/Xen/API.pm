@@ -273,10 +273,11 @@ sub transfer_vm {
   # create source server socket
 	my ($ssock,$dsock);
 
-    if ( $ssock = IO::Socket::SSL->new(PeerAddr => $self->{host}, PeerPort => 443, Proto => 'tcp', Blocking => 1, Timeout => 10, SSL_verify_mode => SSL_VERIFY_NONE)  )
+    if ( $ssock = IO::Socket::SSL->new(PeerHost => $self->{host}, PeerPort => 'https', Proto => 'tcp', Blocking => 1, Timeout => 10, SSL_verify_mode => SSL_VERIFY_NONE)  )
     {
       if ( $ssock->connected )
       {
+        print 'Start export on ' . $self->{host} . "\n";
         print $ssock "GET /export/?session_id=$self->{session}&task_id=$stask&ref=$vm_ref HTTP/1.1\r\n";
         print $ssock "User-Agent: perl-Xen-API \r\n\r\n";
         $ssock->flush();
@@ -325,10 +326,11 @@ sub transfer_vm {
   my $dtask = $d->Xen::API::task::create("import_$vmname","Import VM $vmname");
   
 	# Creating destination socket
-    if ( $dsock = IO::Socket::SSL->new(PeerAddr => $d->{host}, PeerPort => 443, Proto => 'tcp', Blocking => 1, Timeout => 10, SSL_verify_mode => SSL_VERIFY_NONE)  )
+    if ( $dsock = IO::Socket::SSL->new(PeerHost => $d->{host}, PeerPort => 'https', Proto => 'tcp', Blocking => 1, Timeout => 10, SSL_verify_mode => SSL_VERIFY_NONE)  )
     {
       if ( $dsock->connected )
       {
+        print 'Start Import on ' . $d->{host} . "\n";
         print $dsock "PUT /import/?session_id=$d->{session}&task_id=$dtask".($sr_uuid?"&sr_uuid=$sr_uuid":"")." HTTP/1.1\r\n";
         print $dsock "User-Agent: perl-Xen-API \r\n\r\n";
         $dsock->flush();
@@ -345,7 +347,7 @@ sub transfer_vm {
 					@http_status = split(/ /,$tmp) if $n == 0;
 					if ( ( my ($k,$v) = split(/: /, $tmp,2) ) && $n > 0 )
 					{
-					 #notice("$k - $v");
+					 #print("$k - $v\n");
 					 $headers{lc($k)} = $v;
 					}
 					$n++;
