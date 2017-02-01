@@ -131,6 +131,21 @@ sub get_record {
 }
 
 
+sub get_all_records {
+  my $self = shift or return;
+  my $type = shift or return;
+  my $ref = shift or return;
+  return $self->request($type.'.get_all_records', $ref);
+}
+
+sub get_all_records_where {
+  my $self = shift or return;
+  my $type = shift or return;
+  my $ref = shift or return;
+  my $opt = shift;
+  return $self->request($type.'.get_all_records_where', $ref, $opt);
+}
+
 sub get_console_ref {
   my $self = shift or return;
   my $vm_name = shift or return;
