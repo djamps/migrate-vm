@@ -62,7 +62,10 @@ sub new {
   #require RPC::XML::Client;
   #RPC::XML::Client->import('simple_request');
   #	$RPC::XML::FORCE_STRING_ENCODING = 1;
-  $self->{xen} = RPC::XML::Client->new($self->{uri});
+  $self->{xen} = RPC::XML::Client->new($self->{uri},
+      ssl_opts =>    {
+          SSL_verify_mode => SSL_VERIFY_NONE
+      });
   # set up autoload packages for Xen API.
   my %seen;
   my %classes =
@@ -273,7 +276,7 @@ sub transfer_vm {
   # create source server socket
 	my ($ssock,$dsock);
 
-    if ( $ssock = IO::Socket::SSL->new(PeerAddr => $self->{host}, PeerPort => 443, Proto => 'tcp', Blocking => 1, Timeout => 10)  )
+    if ( $ssock = IO::Socket::SSL->new(PeerAddr => $self->{host}, PeerPort => 443, Proto => 'tcp', Blocking => 1, Timeout => 10, SSL_verify_mode => SSL_VERIFY_NONE)  )
     {
       if ( $ssock->connected )
       {
@@ -325,7 +328,7 @@ sub transfer_vm {
   my $dtask = $d->Xen::API::task::create("import_$vmname","Import VM $vmname");
   
 	# Creating destination socket
-    if ( $dsock = IO::Socket::SSL->new(PeerAddr => $d->{host}, PeerPort => 443, Proto => 'tcp', Blocking => 1, Timeout => 10)  )
+    if ( $dsock = IO::Socket::SSL->new(PeerAddr => $d->{host}, PeerPort => 443, Proto => 'tcp', Blocking => 1, Timeout => 10, SSL_verify_mode => SSL_VERIFY_NONE)  )
     {
       if ( $dsock->connected )
       {
