@@ -1,6 +1,4 @@
 package Xen::API;
-use strict;
-use warnings;
 use RPC::XML;
 use RPC::XML::Client;
 $RPC::XML::FORCE_STRING_ENCODING = 1;

@@ -1,6 +1,4 @@
 #!/usr/bin/perl
-use strict;
-use warnings;
 use File::Basename qw( dirname );
 use lib dirname(__FILE__).'/lib';
 use Xen::API;
