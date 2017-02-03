@@ -275,6 +275,7 @@ sub session {
 
 sub transfer_vm {
   my $self = shift or return;
+  my $useSsl = shift or return;
   my $vmname = shift or return;
   my ($dest_host,$dest_user,$dest_pass,$sr_id) = @_;
   
@@ -288,7 +289,13 @@ sub transfer_vm {
   # create source server socket
 	my ($ssock,$dsock);
 
-    if ( $ssock = IO::Socket::SSL->new(PeerHost => $self->{host}, PeerPort => 'https', Proto => 'tcp', Blocking => 1, Timeout => 10, SSL_verify_mode => SSL_VERIFY_NONE)  )
+  if($useSsl) {
+    $ssock = IO::Socket::SSL->new(PeerHost => $self->{host}, PeerPort => 'https', Proto => 'tcp', Blocking => 1, Timeout => 10, SSL_verify_mode => SSL_VERIFY_NONE)
+  } else {
+    $ssock = IO::Socket::INET->new(PeerAddr => $self->{host}, PeerPort => 80, Proto => 'tcp', Blocking => 1, Timeout => 10);
+  }
+
+    if ( $ssock  )
     {
       if ( $ssock->connected )
       {
@@ -339,9 +346,15 @@ sub transfer_vm {
 
   # create the import task on destination server
   my $dtask = $d->Xen::API::task::create("import_$vmname","Import VM $vmname");
+
+  if ($useSsl) {
+    $dsock = $dsock = IO::Socket::SSL->new(PeerHost => $d->{host}, PeerPort => 'https', Proto => 'tcp', Blocking => 1, Timeout  => 10, SSL_verify_mode => SSL_VERIFY_NONE);
+  } else {
+    $dsock = IO::Socket::INET->new(PeerAddr => $d->{host}, PeerPort => 80, Proto => 'tcp', Blocking => 1, Timeout => 10)
+  }
   
 	# Creating destination socket
-    if ( $dsock = IO::Socket::SSL->new(PeerHost => $d->{host}, PeerPort => 'https', Proto => 'tcp', Blocking => 1, Timeout => 10, SSL_verify_mode => SSL_VERIFY_NONE)  )
+    if ( $dsock )
     {
       if ( $dsock->connected )
       {

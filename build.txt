@@ -1,1 +1,1 @@
-pp migratevm.pl -o migratevm -u -a lib -M URI -M HTTP::Config -M RPC::XML::Client -M IO::Prompt -M Number::Format -M Time::HiRes -M IO::Socket::SSL -M LWP::Protocol::https
+pp migratevm.pl -o migratevm -u -a lib -M URI -M HTTP::Config -M RPC::XML::Client -M IO::Prompt -M Number::Format -M Time::HiRes -M IO::Socket::SSL -M IO::Socket::INET -M LWP::Protocol::https

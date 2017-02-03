@@ -8,14 +8,15 @@ Hint: You're best off compiling a static binary (check build.txt).  It would be 
 
 ### Options:
 
-	-sh : source host
-	-su : source user (usually root)
-	-sp : source pass
-	-sv : source VM label or UUID
-	-dh : destination host
-	-du : destination user
-	-dp : destination pass
-	-ds : destination SR (optional)
+	-sh  : source host
+	-su  : source user (usually root)
+	-sp  : source pass
+	-sv  : source VM label or UUID
+	-dh  : destination host
+	-du  : destination user
+	-dp  : destination pass
+	-ds  : destination SR (optional)
+	-ssl : flag to use SSL for the transfer of VM
 
 If any of the options are omitted, you will be prompted for them.
 
