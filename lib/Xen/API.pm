@@ -275,9 +275,8 @@ sub session {
 
 sub transfer_vm {
   my $self = shift or return;
-  my $useSsl = shift or return;
   my $vmname = shift or return;
-  my ($dest_host,$dest_user,$dest_pass,$sr_id) = @_;
+  my ($useSsl, $dest_host,$dest_user,$dest_pass,$sr_id) = @_;
   
   # find the source VM
   my $vm_ref = $self->get_ref('VM', $vmname);

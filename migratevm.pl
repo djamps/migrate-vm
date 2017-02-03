@@ -40,6 +40,6 @@ my $x = Xen::API->new($shost,$suser,$spass) || die $!;
 
 ## Do the transfer
 print "Connecting to destination host and Starting transfer\n";
-$x->transfer_vm($opt->{'ssl'},$svm,$dhost,$duser,$dpass,$dsr);
+$x->transfer_vm($svm,$opt->{'ssl'},$dhost,$duser,$dpass,$dsr);
 
 exit;
