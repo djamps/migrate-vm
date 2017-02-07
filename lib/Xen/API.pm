@@ -347,7 +347,7 @@ sub transfer_vm {
   my $dtask = $d->Xen::API::task::create("import_$vmname","Import VM $vmname");
 
   if ($useSsl) {
-    $dsock = $dsock = IO::Socket::SSL->new(PeerHost => $d->{host}, PeerPort => 'https', Proto => 'tcp', Blocking => 1, Timeout  => 10, SSL_verify_mode => SSL_VERIFY_NONE);
+    $dsock = IO::Socket::SSL->new(PeerHost => $d->{host}, PeerPort => 'https', Proto => 'tcp', Blocking => 1, Timeout  => 10, SSL_verify_mode => SSL_VERIFY_NONE);
   } else {
     $dsock = IO::Socket::INET->new(PeerAddr => $d->{host}, PeerPort => 80, Proto => 'tcp', Blocking => 1, Timeout => 10)
   }
