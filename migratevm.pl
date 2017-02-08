@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-use strict;
 use File::Basename qw( dirname );
 use lib dirname(__FILE__).'/lib';
 use Xen::API;
@@ -18,10 +17,11 @@ GetOptions ( $opt,
 	"duser=s",
 	"dpass=s",
 	"dsr=s",
+	"ssl",
 	"debug!",
 );
 
-my $version = "1.0.2";
+my $version = "1.2.0";
 print "migratevm $version started\n";
 
 ## Set up vars
@@ -40,6 +40,6 @@ my $x = Xen::API->new($shost,$suser,$spass) || die $!;
 
 ## Do the transfer
 print "Connecting to destination host and Starting transfer\n";
-$x->transfer_vm($svm,$dhost,$duser,$dpass,$dsr);
+$x->transfer_vm($svm,$opt->{'ssl'},$dhost,$duser,$dpass,$dsr);
 
 exit;
