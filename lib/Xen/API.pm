@@ -21,6 +21,8 @@ BEGIN {
   our $VERSION = '0.01';
 }
 
+my $socket_transfer_chunk_size = 100000;	# get 100k with every socket read
+
 sub password {
   my $message = shift || 'Enter password: ';
   IO::Prompt::prompt($message, -e=>'*', '-tty').'';
@@ -387,10 +389,12 @@ sub transfer_vm {
         my $rate = 0;
         my $t0 = [gettimeofday()];
         $| = 1;
-        while (<$ssock>)
+        my $buf="";
+        my $len;
+        while ($len = sysread($ssock,$buf,$socket_transfer_chunk_size))
         {
           ## Do some progress indication since this takes a while and things can go wrong
-          if ($x > 10000) {
+          if ($x > 100) {
 						if ( $y >= 20 ) {
 							my $elapsed = tv_interval ( $t0, [gettimeofday()]);
 							$rate = ($z/$elapsed)/1024;
@@ -403,8 +407,8 @@ sub transfer_vm {
 						print "."; $x = 0; $y++;
           	
 					}
-					print $dsock $_;
-          $z = $z + length($_);
+					print $dsock $buf;
+          $z = $z + $len;
           $x++;
         }
         print "\r\nDone.\r\n";
