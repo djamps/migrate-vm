@@ -4,7 +4,7 @@ NOTE:  If you need a 32-bit binary of the script (and want to avoid compiling yo
 
 With the help of Ben Booth's Xen::API (Perl module I hacked up), I put together a VM migration script to export a VM directly to another host with no intermediary file. The transfer occurs over XAPI with no temp files or local disk interaction. This script can run directly on the source or destination host, or any server in between. Bear in mind, you will have the best speeds and least network overhead running this directly on the destination host.
 
-Hint: You're best off compiling a static binary (check build.txt).  It would be nearly impossible to meet the dependencies on a live XenServer otherwise.
+Hint: You're best off compiling a static binary (see below).  It would be nearly impossible to meet the dependencies on a live XenServer otherwise.
 
 ### Options:
 
@@ -35,3 +35,10 @@ If any of the options are omitted, you will be prompted for them.   Using SSL fo
 	...................    12.0%, 30618.43 (KB/sec)
 	Done.
 
+### Building
+
+A Dockerfile is available to help build a static binary that can be deployed to XenServer 7 hosts.
+Running `./docker_build.sh` will create the container, run the build inside it, and copy the resulting binary out to
+your local filesystem, then clean up the container.
+
+The image is based on CentOS 7 for compatibility with XenServer 7.

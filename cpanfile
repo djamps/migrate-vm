@@ -1,0 +1,9 @@
+requires 'URI';
+requires 'HTTP::Config';
+requires 'RPC::XML::Client';
+requires 'IO::Prompt';
+requires 'Number::Format';
+requires 'Time::HiRes';
+requires 'IO::Socket::SSL';
+requires 'IO::Socket::INET';
+requires 'LWP::Protocol::https';
