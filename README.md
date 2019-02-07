@@ -15,10 +15,11 @@ Hint: You're best off compiling a static binary (check build.txt).  It would be 
 	-dh  : destination host
 	-du  : destination user
 	-dp  : destination pass
-	-ds  : destination SR (optional)
+	-ds  : destination SR (optional, but the destination server must have a default SR)
 	-ssl : flag to use SSL for the data transfer of VM
 
 If any of the options are omitted, you will be prompted for them.   Using SSL for data transfer appears to reduce the throughput significantly.   I would recommend not using SSL transfer if you have a secure network connection between the hosts.   SSL will always be used in the XAPI calls regardless of this setting.
+
 
 ###Example output:
 
